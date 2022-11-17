@@ -28,8 +28,8 @@ RUN apt-key del 7fa2af80 && \
     apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64/7fa2af80.pub && \
     apt-get update && \
     apt-get install -y --no-install-recommends openssh-server zsh tmux mosh locales-all clangd sudo \
-        zip unzip wget build-essential autoconf autogen gdb python3.8 python3-pip python3-dev rapidjson-dev \
-        xz-utils zstd libz-dev && \
+    zip unzip wget build-essential autoconf autogen gdb python3.8 python3-pip python3-dev rapidjson-dev \
+    xz-utils zstd libz-dev && \
     pip3 install torch==1.9.1+cu111 -f https://download.pytorch.org/whl/torch_stable.html  && \
     pip3 install --extra-index-url https://pypi.ngc.nvidia.com regex fire tritonclient[all] && \
     pip3 install transformers huggingface_hub tokenizers SentencePiece sacrebleu && \
@@ -61,13 +61,13 @@ ARG FORCE_BACKEND_REBUILD=0
 RUN mkdir build -p && \
     cd build && \
     cmake \
-      -D CMAKE_EXPORT_COMPILE_COMMANDS=1 \
-      -D CMAKE_BUILD_TYPE=Release \
-      -D CMAKE_INSTALL_PREFIX=/opt/tritonserver \
-      -D TRITON_COMMON_REPO_TAG="r${NVIDIA_TRITON_SERVER_VERSION}" \
-      -D TRITON_CORE_REPO_TAG="r${NVIDIA_TRITON_SERVER_VERSION}" \
-      -D TRITON_BACKEND_REPO_TAG="r${NVIDIA_TRITON_SERVER_VERSION}" \
-      .. && \
+    -D CMAKE_EXPORT_COMPILE_COMMANDS=1 \
+    -D CMAKE_BUILD_TYPE=Release \
+    -D CMAKE_INSTALL_PREFIX=/opt/tritonserver \
+    -D TRITON_COMMON_REPO_TAG="r${NVIDIA_TRITON_SERVER_VERSION}" \
+    -D TRITON_CORE_REPO_TAG="r${NVIDIA_TRITON_SERVER_VERSION}" \
+    -D TRITON_BACKEND_REPO_TAG="r${NVIDIA_TRITON_SERVER_VERSION}" \
+    .. && \
     make -j"$(grep -c ^processor /proc/cpuinfo)" install
 
 ENV NCCL_LAUNCH_MODE=GROUP
@@ -79,3 +79,5 @@ RUN sed -i 's/#X11UseLocalhost yes/X11UseLocalhost no/g' /etc/ssh/sshd_config
 RUN mkdir /var/run/sshd -p
 
 ADD . /workspace/fastertransformer_backend
+
+RUN pip install transformers

@@ -26,7 +26,7 @@
 
 name: "fastertransformer"
 backend: "fastertransformer"
-default_model_filename: "gpt3_345M"
+default_model_filename: "opt_125M"
 max_batch_size: 1024
 
 model_transaction_policy {
@@ -222,7 +222,7 @@ parameters {
 parameters {
   key: "model_checkpoint_path"
   value: {
-    string_value: "/data/models/GPT/Megatron/c-model/345m/1-gpu/"
+    string_value: "/workspace/model_checkpoints_small/1-gpu"
   }
 }
 parameters {

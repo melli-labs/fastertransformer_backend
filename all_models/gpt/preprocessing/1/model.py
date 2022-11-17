@@ -4,20 +4,24 @@ import json
 import numpy as np
 import torch
 import triton_python_backend_utils as pb_utils
-import utils.gpt_token_encoder as encoder
 
 from pathlib import Path
 from torch.nn.utils.rnn import pad_sequence
 from word_list import to_word_list_format
 
-# GPT3 Related variables
-# Reference : https://github.com/NVIDIA/FasterTransformer/blob/main/sample/pytorch/gpt_sample.py
-MERGES_FILE = "gpt2-merges.txt"
-VOCAB_FILE = "gpt2-vocab.json"
+from transformers import (
+    AutoConfig,
+    AutoTokenizer,
+    BatchEncoding,
+    PretrainedConfig,
+    PreTrainedTokenizer,
+    TensorType,
+)
 
-START_ID = 50256
-END_ID = 50256
+START_ID = 2
+END_ID = 2
 MAX_BATCH_SIZE = 8
+MODEL_NAME = "facebook/opt-125m"
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
@@ -52,7 +56,7 @@ class TritonPythonModel:
           )
 
         cur_folder = Path(__file__).parent
-        self.encoder = encoder.get_encoder(str(cur_folder/VOCAB_FILE), str(cur_folder/MERGES_FILE))
+        self.encoder = AutoTokenizer.from_pretrained(MODEL_NAME)
 
     def execute(self, requests):
         """`execute` must be implemented in every Python model. `execute`
@@ -142,7 +146,7 @@ class TritonPythonModel:
         """
             query : batch string (2D numpy array)
         """
-        start_ids = [torch.IntTensor(self.encoder.encode(s[0].decode())) for s in query]
+        start_ids = [torch.IntTensor(self.encoder(s[0].decode(), return_tensors=TensorType.PYTORCH)) for s in query]
         start_lengths = torch.IntTensor([[len(ids)] for ids in start_ids])
 
         start_ids = pad_sequence(start_ids, batch_first=True, padding_value=END_ID)
