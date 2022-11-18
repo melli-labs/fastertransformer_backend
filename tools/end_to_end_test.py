@@ -39,8 +39,8 @@ START_LEN = 8
 OUTPUT_LEN = 24
 BATCH_SIZE = 8
 
-start_id = 220
-end_id = 50256
+start_id = 2
+end_id = 2
 
 def prepare_tensor(name, input, protocol):
     client_util = httpclient if protocol == "http" else grpcclient
@@ -123,35 +123,14 @@ if __name__ == '__main__':
                                         concurrency=1,
                                         verbose=FLAGS.verbose) as client:
         input0 = [
-                ["Blackhawks\n The 2015 Hilltoppers"],
-                ["Data sources you can use to make a decision:"],
-                ["\n if(angle = 0) { if(angle"],
-                ["GMs typically get 78% female enrollment, but the "],
-                ["Previous Chapter | Index | Next Chapter"],
-                ["Michael, an American Jew, called Jews"],
-                ["Blackhawks\n The 2015 Hilltoppers"],
                 ["Data sources you can use to make a comparison:"]
                 ]
         input0_data = np.array(input0).astype(object)
         output0_len = np.ones_like(input0).astype(np.uint32) * OUTPUT_LEN
         bad_words_list = np.array([
-            ["Hawks, Hawks"],
-            [""],
-            [""],
-            [""],
-            [""],
-            [""],
-            [""],
             [""]], dtype=object)
         stop_words_list = np.array([
-            [""],
-            [""],
-            [""],
-            [""],
-            [""],
-            [""],
-            [""],
-            ["month, month"]], dtype=object)
+            [""]], dtype=object)
         inputs = [
             prepare_tensor("QUERY", input0_data, FLAGS.protocol),
             prepare_tensor("BAD_WORDS_DICT", bad_words_list, FLAGS.protocol),
@@ -171,6 +150,7 @@ if __name__ == '__main__':
             print(output0, output1, output2)
             print("===========================================\n\n\n")
         except Exception as e:
+            print("Something went wrong here")
             print(e)
 
     ######################
@@ -254,31 +234,10 @@ if __name__ == '__main__':
                                         verbose=FLAGS.verbose) as client:
         input0 = [
                 ["Blackhawks\n The 2015 Hilltoppers"],
-                ["Data sources you can use to make a decision:"],
-                ["\n if(angle = 0) { if(angle"],
-                ["GMs typically get 78% female enrollment, but the "],
-                ["Previous Chapter | Index | Next Chapter"],
-                ["Michael, an American Jew, called Jews"],
-                ["Blackhawks\n The 2015 Hilltoppers"],
-                ["Data sources you can use to make a comparison:"]
                 ]
         bad_words_list = np.array([
-            ["Hawks, Hawks"],
-            [""],
-            [""],
-            [""],
-            [""],
-            [""],
-            [""],
             [""]], dtype=object)
         stop_words_list = np.array([
-            [""],
-            [""],
-            [""],
-            [""],
-            [""],
-            [""],
-            [""],
             ["month, month"]], dtype=object)
         input0_data = np.array(input0).astype(object)
         output0_len = np.ones_like(input0).astype(np.uint32) * OUTPUT_LEN

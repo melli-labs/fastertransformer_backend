@@ -36,12 +36,12 @@ model_transaction_policy {
 input [
   {
     name: "input_ids"
-    data_type: TYPE_UINT32
+    data_type: TYPE_INT32
     dims: [ -1 ]
   },
   {
     name: "input_lengths"
-    data_type: TYPE_UINT32
+    data_type: TYPE_INT32
     dims: [ 1 ]
     reshape: { shape: [ ] }
   },

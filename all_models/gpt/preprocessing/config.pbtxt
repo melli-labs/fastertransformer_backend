@@ -26,12 +26,12 @@ input [
 output [
     {
         name: "INPUT_ID"
-        data_type: TYPE_UINT32
+        data_type: TYPE_INT32
         dims: [ -1 ]
     },
     {
         name: "REQUEST_INPUT_LEN"
-        data_type: TYPE_UINT32
+        data_type: TYPE_INT32
         dims: [ 1 ]
     },
     {

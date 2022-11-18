@@ -8,3 +8,4 @@ compile_commands.json
 *.pyc
 *.bin
 core
+triton_out

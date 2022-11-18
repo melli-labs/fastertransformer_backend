@@ -6,15 +6,12 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 import triton_python_backend_utils as pb_utils
 
-import utils.gpt_token_encoder as encoder
+from transformers import AutoTokenizer
 
-
-# GPT3 Related variables
-# Reference : https://github.com/NVIDIA/FasterTransformer/blob/main/sample/pytorch/gpt_sample.py
-MERGES_FILE = "gpt2-merges.txt"
-VOCAB_FILE = "gpt2-vocab.json"
 
 MAX_BATCH_SIZE = 8
+MODEL_NAME = "facebook/opt-125m"
+
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
@@ -46,6 +43,8 @@ class TritonPythonModel:
         # Convert Triton types to numpy types
         self.output_dtype= pb_utils.triton_string_to_numpy(
             output_config['data_type'])
+
+        self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
     def execute(self, requests):
         """`execute` must be implemented in every Python model. `execute`
@@ -113,12 +112,10 @@ class TritonPythonModel:
 
 
     def _postprocessing(self, tokens_batch):
-        cur_folder = Path(__file__).parent
-        enc = encoder.get_encoder(str(cur_folder/VOCAB_FILE), str(cur_folder/MERGES_FILE))
 
         outputs = []
         for beam_tokens in tokens_batch:
             for tokens in beam_tokens:
-                output = enc.decode(tokens)
+                output = self.tokenizer.decode(tokens)
                 outputs.append(output.encode('utf8'))
         return outputs 

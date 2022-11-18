@@ -3,6 +3,7 @@ import csv
 import json
 import numpy as np
 import torch
+from torch.utils.dlpack import to_dlpack
 import triton_python_backend_utils as pb_utils
 
 from pathlib import Path
@@ -15,7 +16,7 @@ from transformers import (
     BatchEncoding,
     PretrainedConfig,
     PreTrainedTokenizer,
-    TensorType,
+    TensorType
 )
 
 START_ID = 2
@@ -80,13 +81,13 @@ class TritonPythonModel:
 
         responses = []
 
-        # Every Python backend must iterate over everyone of the requests
-        # and create a pb_utils.InferenceResponse for each of them.
+        # create a pb_utils.InferenceResponse for each request
         for idx, request in enumerate(requests):
             # Get input tensors 
             query = pb_utils.get_input_tensor_by_name(request, 'QUERY').as_numpy()
             request_output_len = pb_utils.get_input_tensor_by_name(request, 'REQUEST_OUTPUT_LEN').as_numpy()
 
+            # TODO: refactor word_list utils
             bad_words_dict = pb_utils.get_input_tensor_by_name(request, 'BAD_WORDS_DICT').as_numpy()
             stop_words_dict = pb_utils.get_input_tensor_by_name(request, 'STOP_WORDS_DICT').as_numpy()
 
@@ -99,10 +100,10 @@ class TritonPythonModel:
             # objects to create pb_utils.InferenceResponse.
             input_id_tensor = pb_utils.Tensor(
                 'INPUT_ID',
-                np.array(input_id).astype(self.input_id_dtype))
+                np.array(input_id))
             request_input_len_tensor = pb_utils.Tensor(
                 'REQUEST_INPUT_LEN',
-                np.array(request_input_len).astype(self.request_input_len_dtype))
+                np.array(request_input_len))
             request_output_len_tensor = pb_utils.Tensor(
                 'REQUEST_OUTPUT_LEN',
                 request_output_len)
@@ -146,43 +147,25 @@ class TritonPythonModel:
         """
             query : batch string (2D numpy array)
         """
-        start_ids = [torch.IntTensor(self.encoder(s[0].decode(), return_tensors=TensorType.PYTORCH)) for s in query]
-        start_lengths = torch.IntTensor([[len(ids)] for ids in start_ids])
+        # binary data typed back to string
+        text = [s[0].decode() for s in query]
 
-        start_ids = pad_sequence(start_ids, batch_first=True, padding_value=END_ID)
+        start_ids = []
+        for t in text:
+            tokenizer_output: BatchEncoding = self.encoder(
+                    text=t,
+                    return_tensors=TensorType.PYTORCH,
+                    return_attention_mask=False,
+                )
+            input_ids = tokenizer_output.input_ids.type(dtype=torch.int32).squeeze().numpy()
+            start_ids.append(input_ids)
+
+        #start_ids = [torch.IntTensor(self.encoder(t, return_tensors=TensorType.PYTORCH, return_attention_mask=False)) for t in text]
+        start_lengths = torch.IntTensor([[len(ids)] for ids in start_ids])
+        #ids_dlpack = [to_dlpack(ids) for ids in start_ids]
+
+        #start_ids = pad_sequence(start_ids, batch_first=True, padding_value=END_ID)
         # input_len = min(start_lengths)
         #attn_mask = torch.ones((batch_size, input_len, input_len)).tril()
 
         return start_ids, start_lengths
-
-    def _create_word_list(self, word_dict):
-        flat_ids = []
-        offsets = []
-        for word_dict_item in word_dict:
-            item_flat_ids = []
-            item_offsets = []
-
-            words = list(csv.reader([word_dict_item[0].decode()]))[0]
-            for word in words:
-                ids = self._encode(word)
-
-                if len(ids) == 0:
-                    continue
-
-                item_flat_ids += ids
-                item_offsets.append(len(ids))
-
-            flat_ids.append(np.array(item_flat_ids))
-            offsets.append(np.cumsum(np.array(item_offsets)))
-
-        pad_to = max(1, max(len(ids) for ids in flat_ids))
-
-        for i, (ids, offs) in enumerate(zip(flat_ids, offsets)):
-            flat_ids[i] = np.pad(ids, (0, pad_to - len(ids)), constant_values=0)
-            offsets[i] = np.pad(offs, (0, pad_to - len(offs)), constant_values=-1)
-
-        return np.array([flat_ids, offsets], dtype="int32").transpose((1, 0, 2))
-
-    def _encode(self, sentence):
-        sentence = sentence.decode() if isinstance(sentence, bytes) else sentence
-        return self.encoder.encode(sentence)
