@@ -30,15 +30,12 @@ import argparse
 import numpy as np
 import tritonclient.grpc as grpcclient
 import tritonclient.http as httpclient
+from time import time
 
 from tritonclient.utils import np_to_triton_dtype
 
 FLAGS = None
-
-START_LEN = 8
-OUTPUT_LEN = 24
-BATCH_SIZE = 8
-
+BATCH_SIZE = 4
 start_id = 2
 end_id = 2
 
@@ -80,7 +77,7 @@ if __name__ == '__main__':
     parser.add_argument('-topk',
                         '--topk',
                         type=int,
-                        default=1,
+                        default=200,
                         required=False,
                         help='topk for sampling')
     parser.add_argument('-topp',
@@ -123,8 +120,10 @@ if __name__ == '__main__':
                                         concurrency=1,
                                         verbose=FLAGS.verbose) as client:
         input0 = [
-                ["Data sources you can use to make a comparison:"]
+                ["Melli is a talkative, engaging and curious voice-operated chatbot who likes to ask many questions to Anon, the user. She picks up on the user's statements and answers her or his questions if necessary. She then skillfully initiates a chat. \n Melli: Hey Anon, how is your day going? \n Anon: I don't feel too good, my back hurts. Do you have any tips? \n Melli:"]
                 ]
+        INPUT_LEN = len(input0[0][0])
+        OUTPUT_LEN = 34
         input0_data = np.array(input0).astype(object)
         output0_len = np.ones_like(input0).astype(np.uint32) * OUTPUT_LEN
         bad_words_list = np.array([
@@ -165,7 +164,7 @@ if __name__ == '__main__':
         temperature = 1.0 * np.ones([output0.shape[0], 1]).astype(np.float32)
         len_penalty = 1.0 * np.ones([output0.shape[0], 1]).astype(np.float32)
         repetition_penalty = 1.0 * np.ones([output0.shape[0], 1]).astype(np.float32)
-        random_seed = 0 * np.ones([output0.shape[0], 1]).astype(np.uint64)
+        random_seed = 10 * np.ones([output0.shape[0], 1]).astype(np.uint64)
         is_return_log_probs = FLAGS.return_log_probs * np.ones([output0.shape[0], 1]).astype(np.bool)
         beam_width = (FLAGS.beam_width * np.ones([output0.shape[0], 1])).astype(np.uint32)
         start_ids = start_id * np.ones([output0.shape[0], 1]).astype(np.uint32)
@@ -191,7 +190,9 @@ if __name__ == '__main__':
         ]
 
         try:
+            start_time = time()
             result = client.infer(model_name, inputs)
+            end_time = time()
             output0 = result.as_numpy("output_ids")
             output1 = result.as_numpy("sequence_length")
             print("============After fastertransformer============")
@@ -222,6 +223,10 @@ if __name__ == '__main__':
             output0 = result.as_numpy("OUTPUT")
             print("============After postprocessing============")
             print(output0)
+            print("OPT-66B")
+            print(f"Input sequence length: {INPUT_LEN} tokens")
+            print(f"Requested output length: {OUTPUT_LEN} tokens")
+            print(f"Model runtime: {time() - start_time}")
             print("===========================================\n\n\n")
         except Exception as e:
             print(e)
@@ -233,7 +238,7 @@ if __name__ == '__main__':
                                         concurrency=1,
                                         verbose=FLAGS.verbose) as client:
         input0 = [
-                ["Blackhawks\n The 2015 Hilltoppers"],
+                ["Albert Einstein meets Elon Musk and asks"],
                 ]
         bad_words_list = np.array([
             [""]], dtype=object)

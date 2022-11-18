@@ -21,8 +21,7 @@ from transformers import (
 
 START_ID = 2
 END_ID = 2
-MAX_BATCH_SIZE = 8
-MODEL_NAME = "facebook/opt-125m"
+MODEL_NAME = "facebook/opt-66b"
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model

@@ -10,7 +10,7 @@ from transformers import AutoTokenizer
 
 
 MAX_BATCH_SIZE = 8
-MODEL_NAME = "facebook/opt-125m"
+MODEL_NAME = "facebook/opt-66b"
 
 
 class TritonPythonModel:

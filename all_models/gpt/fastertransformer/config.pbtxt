@@ -26,7 +26,7 @@
 
 name: "fastertransformer"
 backend: "fastertransformer"
-default_model_filename: "opt_125M"
+default_model_filename: "opt_66B"
 max_batch_size: 1024
 
 model_transaction_policy {
@@ -198,7 +198,7 @@ instance_group [
 parameters {
   key: "tensor_para_size"
   value: {
-    string_value: "1"
+    string_value: "2"
   }
 }
 parameters {
@@ -222,7 +222,7 @@ parameters {
 parameters {
   key: "model_checkpoint_path"
   value: {
-    string_value: "/workspace/model_checkpoints_small/1-gpu"
+    string_value: "/workspace/model_checkpoints/2-gpu"
   }
 }
 parameters {
