@@ -1,0 +1,31 @@
+
+name: "opt-350m-onnx-generate"
+backend: "python"
+max_batch_size: 0
+instance_group [
+    {
+      count: 1
+      kind: KIND_CPU
+    }
+  ] 
+input [
+    {
+        name: "TEXT"
+        data_type: TYPE_STRING
+        dims: [ -1 ]
+    }
+]
+output [
+    {
+        name: "output"
+        data_type: TYPE_STRING
+        dims: [ -1 ]
+    }
+]
+  
+parameters: {
+  key: "FORCE_CPU_ONLY_INPUT_TENSORS"
+  value: {
+    string_value:"no"
+  }
+}
