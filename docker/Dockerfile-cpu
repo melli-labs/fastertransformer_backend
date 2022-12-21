@@ -4,4 +4,7 @@ FROM nvcr.io/nvidia/tritonserver:22.07-py3
 RUN pip3 install -U pip && \
     pip3 install nvidia-pyindex && \
     pip3 install torch -f https://download.pytorch.org/whl/cu113/torch_stable.html --extra-index-url https://pypi.ngc.nvidia.com --no-cache-dir  && \
-    pip3 install transformers
+    pip3 install transformers==4.23.0
+
+WORKDIR /workspace
+ADD . /workspace/fastertransformer_backend
