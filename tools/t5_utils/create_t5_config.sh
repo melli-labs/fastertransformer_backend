@@ -2,7 +2,6 @@ MODEL_PATH=$1
 TP=$2
 PP=$3
 DATA_TYPE=$4
-MODEL_TYPE=$5
 
 if [ $MODEL_PATH ]; then
   :
@@ -32,19 +31,19 @@ else
     exit
 fi
 
-if [ "$MODEL_TYPE" = "GPT" ]; then
-  :
-elif [ "$MODEL_TYPE" = "GPT-J" ]; then
-  :
-elif [ "$MODEL_TYPE" = "GPT-NeoX" ]; then
-  :
+if [ "$DATA_TYPE" = "fp16" ]; then
+  TRITON_TYPE=TYPE_FP16
+elif [ "$DATA_TYPE" = "bf16" ]; then
+  TRITON_TYPE=TYPE_BF16
+elif [ "$DATA_TYPE" = "fp32" ]; then
+  TRITON_TYPE=TYPE_FP32
 else
-	echo "MODEL_TYPE ${MODEL_TYPE} is not suppoted"
-  exit
+  echo "[ERROR] ${DATA_TYPE} is invalid."
+    exit
 fi
 
 echo "
-# Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2021-2022, NVIDIA CORPORATION. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -58,7 +57,7 @@ echo "
 #    contributors may be used to endorse or promote products derived
 #    from this software without specific prior written permission.
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS AND ANY
 # EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
 # PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
@@ -72,7 +71,7 @@ echo "
 
 name: \"fastertransformer\"
 backend: \"fastertransformer\"
-default_model_filename: \"${MODEL_TYPE}\"
+default_model_filename: \"t5\"
 max_batch_size: 1024
 input [
   {
@@ -81,15 +80,10 @@ input [
     dims: [ -1 ]
   },
   {
-    name: \"input_lengths\"
+    name: \"sequence_length\"
     data_type: TYPE_UINT32
     dims: [ 1 ]
     reshape: { shape: [ ] }
-  },
-  {
-    name: \"request_output_len\"
-    data_type: TYPE_UINT32
-    dims: [ -1 ]
   },
   {
     name: \"runtime_top_k\"
@@ -148,6 +142,12 @@ input [
     optional: true
   },
   {
+    name: \"max_output_len\"
+    data_type: TYPE_UINT32
+    dims: [ 1 ]
+    reshape: { shape: [ ] }
+  },
+  {
     name: \"beam_width\"
     data_type: TYPE_UINT32
     dims: [ 1 ]
@@ -169,13 +169,13 @@ input [
     optional: true
   },
   {
-    name: \"stop_words_list\"
+    name: \"bad_words_list\"
     data_type: TYPE_INT32
     dims: [ 2, -1 ]
     optional: true
   },
   {
-    name: \"bad_words_list\"
+    name: \"stop_words_list\"
     data_type: TYPE_INT32
     dims: [ 2, -1 ]
     optional: true
@@ -188,12 +188,6 @@ input [
     optional: true
   },
   {
-    name: \"request_prompt_embedding\"
-    data_type: TYPE_FP16
-    dims: [ -1, -1 ]
-    optional: true
-  },
-  {
     name: \"request_prompt_lengths\"
     data_type: TYPE_UINT32
     dims: [ 1 ]
@@ -201,8 +195,14 @@ input [
     optional: true
   },
   {
-    name: \"request_prompt_type\"
-    data_type: TYPE_UINT32
+    name: \"request_prompt_embedding\"
+    data_type: ${TRITON_TYPE}
+    dims: [ -1, -1 ]
+    optional: true
+  },
+  {
+    name: \"ia3_tasks\"
+    data_type: TYPE_INT32
     dims: [ 1 ]
     reshape: { shape: [ ] }
     optional: true
@@ -241,11 +241,6 @@ output [
     dims: [ -1 ]
   },
   {
-    name: \"response_input_lengths\"
-    data_type: TYPE_INT32
-    dims: [ -1 ]
-  },
-  {
     name: \"cum_log_probs\"
     data_type: TYPE_FP32
     dims: [ -1 ]
@@ -281,27 +276,21 @@ parameters {
   }
 }
 parameters {
+  key: \"enable_custom_all_reduce\"
+  value: {
+    string_value: \"0\"
+  }
+}
+parameters {
   key: \"model_type\"
   value: {
-    string_value: \"${MODEL_TYPE}\"
+    string_value: \"T5\"
   }
 }
 parameters {
   key: \"model_checkpoint_path\"
   value: {
     string_value: \"${MODEL_PATH}\"
-  }
-}
-parameters {
-  key: \"int8_mode\"
-  value: {
-    string_value: \"0\"
-  }
-}
-parameters {
-  key: \"enable_custom_all_reduce\"
-  value: {
-    string_value: \"0\"
   }
 }
 " > config.pbtxt

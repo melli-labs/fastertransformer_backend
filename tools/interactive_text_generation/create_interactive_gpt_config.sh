@@ -73,159 +73,210 @@ echo "
 name: \"fastertransformer\"
 backend: \"fastertransformer\"
 default_model_filename: \"${MODEL_TYPE}\"
-max_batch_size: 1024
+max_batch_size: 1
+
+model_transaction_policy {
+  decoupled: False
+}
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_CPU
+  }
+]
+
+sequence_batching {
+  max_sequence_idle_microseconds: 60000000
+  direct { }
+  control_input [
+    {
+      name: \"START\"
+      control [
+        {
+          kind: CONTROL_SEQUENCE_START
+          int32_false_true: [ 0, 1 ]
+        }
+      ]
+    },
+    {
+      name: \"END\"
+      control [
+        {
+          kind: CONTROL_SEQUENCE_END
+          int32_false_true: [ 0, 1 ]
+        }
+      ]
+    }
+  ]
+}
+
 input [
   {
     name: \"input_ids\"
     data_type: TYPE_UINT32
-    dims: [ -1 ]
+    dims: [ -1, -1]
   },
   {
     name: \"input_lengths\"
     data_type: TYPE_UINT32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
   },
   {
     name: \"request_output_len\"
     data_type: TYPE_UINT32
-    dims: [ -1 ]
+    dims: [ -1, -1 ]
+  },
+  {
+    name: \"session_len\"
+    data_type: TYPE_UINT32
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
+    optional: true
+  },
+  {
+    name: \"memory_len\"
+    data_type: TYPE_UINT32
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
+    optional: true
   },
   {
     name: \"runtime_top_k\"
     data_type: TYPE_UINT32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"runtime_top_p\"
     data_type: TYPE_FP32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"beam_search_diversity_rate\"
     data_type: TYPE_FP32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"temperature\"
     data_type: TYPE_FP32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"len_penalty\"
     data_type: TYPE_FP32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"repetition_penalty\"
     data_type: TYPE_FP32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"random_seed\"
     data_type: TYPE_UINT64
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"is_return_log_probs\"
     data_type: TYPE_BOOL
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"beam_width\"
     data_type: TYPE_UINT32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"start_id\"
     data_type: TYPE_UINT32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"end_id\"
     data_type: TYPE_UINT32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"stop_words_list\"
     data_type: TYPE_INT32
-    dims: [ 2, -1 ]
+    dims: [ -1, 2, -1 ]
     optional: true
   },
   {
     name: \"bad_words_list\"
     data_type: TYPE_INT32
-    dims: [ 2, -1 ]
+    dims: [ -1, 2, -1 ]
     optional: true
   },
   {
     name: \"prompt_learning_task_name_ids\"
     data_type: TYPE_UINT32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"request_prompt_embedding\"
     data_type: TYPE_FP16
-    dims: [ -1, -1 ]
+    dims: [ -1, -1, -1 ]
     optional: true
   },
   {
     name: \"request_prompt_lengths\"
     data_type: TYPE_UINT32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"request_prompt_type\"
     data_type: TYPE_UINT32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"top_p_decay\"
     data_type: TYPE_FP32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"top_p_min\"
     data_type: TYPE_FP32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   },
   {
     name: \"top_p_reset_ids\"
     data_type: TYPE_UINT32
-    dims: [ 1 ]
-    reshape: { shape: [ ] }
+    dims: [ -1, 1 ]
+    reshape: { shape: [ -1 ] }
     optional: true
   }
 ]
@@ -233,33 +284,22 @@ output [
   {
     name: \"output_ids\"
     data_type: TYPE_UINT32
-    dims: [ -1, -1 ]
+    dims: [ -1, -1, -1 ]
   },
   {
     name: \"sequence_length\"
     data_type: TYPE_UINT32
-    dims: [ -1 ]
-  },
-  {
-    name: \"response_input_lengths\"
-    data_type: TYPE_INT32
-    dims: [ -1 ]
+    dims: [ -1, -1 ]
   },
   {
     name: \"cum_log_probs\"
     data_type: TYPE_FP32
-    dims: [ -1 ]
+    dims: [ -1, -1 ]
   },
   {
     name: \"output_log_probs\"
     data_type: TYPE_FP32
-    dims: [ -1, -1 ]
-  }
-]
-instance_group [
-  {
-    count: 1
-    kind : KIND_CPU
+    dims: [ -1, -1, -1 ]
   }
 ]
 parameters {
@@ -303,5 +343,4 @@ parameters {
   value: {
     string_value: \"0\"
   }
-}
-" > config.pbtxt
+}" > config.pbtxt

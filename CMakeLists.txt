@@ -54,7 +54,6 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 # Python.h needed by torch headers.
 find_package(Python3 REQUIRED COMPONENTS Development)
 
-find_package(FasterTransformer)
 find_package(CUDA 10.1 REQUIRED)
 if (BUILD_MULTI_GPU)
   message(STATUS "Enable BUILD_MULTI_GPU.")
@@ -159,6 +158,7 @@ target_include_directories(
   ${TRITON_PYTORCH_INCLUDE_PATHS}
   ${Python3_INCLUDE_DIRS}
   ${repo-ft_SOURCE_DIR}
+  ${repo-ft_SOURCE_DIR}/3rdparty/cutlass/include
   ${repo-core_SOURCE_DIR}/include
   )
 
